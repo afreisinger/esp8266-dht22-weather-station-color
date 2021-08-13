@@ -350,7 +350,7 @@ void drawProgress(uint8_t percentage, String text) {
   gfx.commit();
 }
 
-// draws the clock
+// draws the clock 
 void drawTime() {
   char time_str[11];
   time_t now = time(nullptr);
@@ -366,9 +366,9 @@ void drawTime() {
 
   if (IS_STYLE_12HR) {
     int hour = (timeinfo->tm_hour + 11) % 12 + 1; // take care of noon and midnight
-    sprintf(time_str, "%2d:%02d:%02d\n", hour, timeinfo->tm_min, timeinfo->tm_sec);
+    sprintf(time_str, "%2d:%02d\n", hour, timeinfo->tm_min);
   } else {
-    sprintf(time_str, "%02d:%02d:%02d\n", timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec);
+    sprintf(time_str, "%02d:%02d\n", timeinfo->tm_hour, timeinfo->tm_min);
   }
   gfx.drawString(120, 20, time_str);
 
