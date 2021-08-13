@@ -6,3 +6,4 @@
 .vscode/ipch
 .DS_Store
 src/conf/*
+src/settings.h
