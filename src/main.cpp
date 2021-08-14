@@ -644,6 +644,7 @@ String getTime(time_t *timestamp) {
 }
 
 void loadPropertiesFromSpiffs() {
+  String THIS_BOARD = ARDUINO_BOARD;
   if (SPIFFS.begin()) {
     const char *msg = "Using '%s' from SPIFFS\n";
     Serial.println("Attempting to read application.properties file from SPIFFS.");
@@ -690,6 +691,7 @@ void loadPropertiesFromSpiffs() {
     Serial.println("\tlocation name: " + DISPLAYED_LOCATION_NAME);
     Serial.println("\tmetric: " + String(IS_METRIC ? "true" : "false"));
     Serial.println("\t12h style: " + String(IS_STYLE_12HR ? "true" : "false"));
+    Serial.println("\tThis board: " + THIS_BOARD);
   } else {
     Serial.println("SPIFFS mount failed.");
   }
