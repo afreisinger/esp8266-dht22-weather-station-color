@@ -1,8 +1,8 @@
 # ESP8266 Weather Station Color
 
 
-ESP8266 Weather Station Color using ILI9341 240x320 TFT display
-Add DTH22 sensor for indoor temperature and humidity
+* ESP8266 Weather Station Color using ILI9341 240x320 TFT display
+* Add DTH22 sensor for indoor temperature and humidity
 
 ## Hardware Requirements
 
@@ -29,3 +29,5 @@ The [wiring diagram](https://docs.thingpulse.com/specs/wifi-color-display-kit/#w
 ## Displaying of actual indoor data from sensor
 
 Just thought that it might be useful to attach a DHT22 sensor to still free D0 (GPIO16) port in order to measure an actual room temperature and humidity.
+* [Datasheets](src/resources/adrafuit_dht22.pdf)
+* [Schematics](src/resources/schematics.png)
