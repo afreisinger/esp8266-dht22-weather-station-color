@@ -4,3 +4,4 @@
 *.sh
 src/conf/*
 src/settings.h
+src/sensors.h
