@@ -78,6 +78,20 @@ int BITS_PER_PIXEL = 2; // 2^2 =  4 colors
 ADC_MODE(ADC_VCC);
 
 
+#if defined(SENSOR_IS_PRESENT) // Temperature % Humidity sensor"
+  #include "DHTesp.h"         // https://github.com/beegee-tokyo/DHTesp
+  DHTesp dht;
+  float humidity = 0.0;
+  float temperature = 0.0;
+  bool readyForSensorUpdate = false;
+  void initSensor();
+  void updateSensor();
+#endif
+
+
+// flag changed in the ticker function every 10 minutes (settings.h)
+bool readyForWeatherUpdate = false;
+
 ILI9341_SPI tft = ILI9341_SPI(TFT_CS, TFT_DC);
 MiniGrafx gfx = MiniGrafx(&tft, BITS_PER_PIXEL, palette);
 Carousel carousel(&gfx, 0, 0, 240, 100);
@@ -116,12 +130,24 @@ void drawForecast1(MiniGrafx *display, CarouselState* state, int16_t x, int16_t 
 void drawForecast2(MiniGrafx *display, CarouselState* state, int16_t x, int16_t y);
 void drawForecast3(MiniGrafx *display, CarouselState* state, int16_t x, int16_t y);
 void loadPropertiesFromSpiffs();
+// add proc
+void initSensor();
+void updateSensor();
+void setReadyForWeatherUpdate();
+void setReadyForSensorUpdate();
+void drawIndoor();
 
 FrameCallback frames[] = { drawForecast1, drawForecast2, drawForecast3 };
 int frameCount = 3;
 
 // how many different screens do we have?
-int screenCount = 5;
+#if defined(SENSOR_IS_PRESENT) // Five o six screens
+    int screenCount = 6;
+    long lastSensorUpdate = millis();
+ #else
+    int screenCount = 5;
+#endif
+
 long lastDownloadUpdate = millis();
 
 uint16_t screen = 0;
@@ -175,6 +201,9 @@ void setup() {
   Serial.begin(115200);
 
   loadPropertiesFromSpiffs();
+  #if defined(SENSOR_IS_PRESENT) 
+    initSensor();
+  #endif 
 
   // The LED pin needs to set HIGH
   // Use this pin to save energy
@@ -223,6 +252,11 @@ void setup() {
 
   // update the weather information
   updateData();
+  
+  #if defined(SENSOR_IS_PRESENT) 
+    updateSensor();
+  #endif
+  
   timerPress = millis();
   canBtnPress = true;
 }
@@ -265,17 +299,47 @@ void loop() {
     drawForecastTable(0);
   } else if (screen == 3) {
     drawForecastTable(4);
+  
+#if defined(SENSOR_IS_PRESENT) // 
+  
+  } else if (screen == 4) {
+    drawTime();
+    drawWifiQuality();
+    drawIndoor();
+    } else if (screen == 5) {
+    drawAbout();
+  }
+ #else
   } else if (screen == 4) {
     drawAbout();
   }
+#endif
+
   gfx.commit();
 
   // Check if we should update weather information
   if (millis() - lastDownloadUpdate > 1000 * UPDATE_INTERVAL_SECS) {
-    updateData();
+    setReadyForWeatherUpdate();
     lastDownloadUpdate = millis();
   }
 
+  if (readyForWeatherUpdate) {
+    updateData();
+    readyForWeatherUpdate = false;
+  }
+
+  #if defined(SENSOR_IS_PRESENT) // 
+    
+    if (millis() -  lastSensorUpdate > 1000 * UPDATE_INTERVAL_SENSOR_SECS) {
+      setReadyForSensorUpdate();
+      lastSensorUpdate = millis();
+    }
+    if (readyForSensorUpdate) {
+      updateSensor();
+      readyForSensorUpdate = false;
+    }
+ #endif
+ 
   if (SLEEP_INTERVAL_SECS && millis() - timerPress >= SLEEP_INTERVAL_SECS * 1000) { // after 2 minutes go to sleep
     drawProgress(25, "Going to Sleep!");
     delay(1000);
@@ -643,6 +707,64 @@ String getTime(time_t *timestamp) {
   return String(buf);
 }
 
+void setReadyForWeatherUpdate() {
+  Serial.println("Setting readyForWeatherUpdate to true");
+  readyForWeatherUpdate = true;
+}
+
+
+#if defined(SENSOR_IS_PRESENT) // 
+
+  void setReadyForSensorUpdate() {
+    Serial.println("Setting readyForSensorUpdate to true");
+    readyForSensorUpdate = true;
+  }
+
+  void initSensor() {
+    dht.setup(GPIO, DHTesp::TEMPERATURE_SENSOR_TYPE); // Connect DHT sensor to GPIO 16
+  }
+
+  void updateSensor() {
+    humidity = dht.getHumidity();
+    temperature = dht.getTemperature();
+    Serial.print(dht.getStatusString());
+    Serial.print("\t");
+    Serial.print(humidity, 1);
+    Serial.print("\t\t");
+    Serial.print(temperature, 1);
+    Serial.print("\t\t");
+    Serial.print(dht.toFahrenheit(temperature), 1);
+    Serial.print("\t\t");
+    Serial.print(dht.computeHeatIndex(temperature, humidity, false), 1);
+    Serial.print("\t\t");
+    Serial.println(dht.computeHeatIndex(dht.toFahrenheit(temperature), humidity, true), 1);
+  }
+
+
+// draws indorr weather information
+  void drawIndoor() {
+    
+    gfx.setTransparentColor(MINI_BLACK);
+    
+    gfx.drawPalettedBitmapFromPgm(20, 78, thermometer);
+    gfx.drawPalettedBitmapFromPgm(20, 150, barometer );
+    
+    // Weather Text
+    gfx.setFont(ArialRoundedMTBold_14);
+    gfx.setColor(MINI_YELLOW);
+    gfx.setTextAlignment(TEXT_ALIGN_RIGHT);
+    gfx.drawString(220, 75, DISPLAYED_INDOOR_NAME);
+
+    gfx.setFont(ArialRoundedMTBold_36);
+    gfx.setColor(MINI_WHITE);
+    gfx.setTextAlignment(TEXT_ALIGN_RIGHT);
+    
+    gfx.drawString(220, 88, String(temperature, 1) + (IS_METRIC ? "°C" : "°F"));
+    gfx.drawString(220, 160, String(humidity, 1) + " %");
+  }
+#endif
+
+
 void loadPropertiesFromSpiffs() {
   String THIS_BOARD = ARDUINO_BOARD;
   if (SPIFFS.begin()) {
@@ -685,13 +807,13 @@ void loadPropertiesFromSpiffs() {
     Serial.println("Effective properties now as follows:");
     Serial.println("\tssid: " + WIFI_SSID);
     Serial.println("\tpassword: " + WIFI_PASS);
-    Serial.println("\timezone: " + TIMEZONE);
+    Serial.println("\ttimezone: " + TIMEZONE);
     Serial.println("\tOWM API key: " + OPEN_WEATHER_MAP_API_KEY);
     Serial.println("\tOWM location id: " + OPEN_WEATHER_MAP_LOCATION_ID);
     Serial.println("\tlocation name: " + DISPLAYED_LOCATION_NAME);
     Serial.println("\tmetric: " + String(IS_METRIC ? "true" : "false"));
     Serial.println("\t12h style: " + String(IS_STYLE_12HR ? "true" : "false"));
-    Serial.println("\tThis board: " + THIS_BOARD);
+    Serial.println("\tthis board: " + THIS_BOARD);
   } else {
     Serial.println("SPIFFS mount failed.");
   }
