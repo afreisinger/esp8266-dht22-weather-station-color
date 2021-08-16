@@ -29,5 +29,5 @@ The [wiring diagram](https://docs.thingpulse.com/specs/wifi-color-display-kit/#w
 ## Displaying of actual indoor data from sensor
 
 Just thought that it might be useful to attach a DHT22 sensor to still free D0 (GPIO16) port in order to measure an actual room temperature and humidity.
-* [Datasheets](src/resources/adrafuit_dht22.pdf)
-* [Schematics](src/resources/schematics.png)
+* [Datasheets](src/resources/adafruit_dht22.pdf)
+* [Schematics](src/resources/schematic.png)
