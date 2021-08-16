@@ -27,11 +27,20 @@
 // Setup
 String WIFI_SSID = "yourssid";
 String WIFI_PASS = "yourpassw0rd";
-#define WIFI_HOSTNAME "ThingPulse-weather-station-color"
+#define WIFI_HOSTNAME "ThingPulse"
 
 const int UPDATE_INTERVAL_SECS = 10 * 60; // Update every 10 minutes
 const int SLEEP_INTERVAL_SECS = 0;        // Going to sleep after idle times, set 0 for insomnia
 
+/* uncomment next line if SENSOR is present */
+#define SENSOR_IS_PRESENT
+
+#if defined(SENSOR_IS_PRESENT)                  
+    #define GPIO 16 // Free GPIO
+    #define TEMPERATURE_SENSOR_TYPE DHT22
+    #define DISPLAYED_INDOOR_NAME  "Office"
+    const int UPDATE_INTERVAL_SENSOR_SECS = 1 * 60; // Update every 1 minutess
+#endif
 
 // OpenWeatherMap Settings
 // Sign up here to get an API key: https://docs.thingpulse.com/how-tos/openweathermap-key/
@@ -70,6 +79,9 @@ bool IS_METRIC = true;
 
 // Change for 12 Hour/ 24 hour style clock
 bool IS_STYLE_12HR = false;
+
+// Change for HH:MM/ HH:MM:SS format clock
+bool IS_STYLE_HHMM = true; // false => HH:MM:SS
 
 // change for different NTP (time servers)
 #define NTP_SERVERS "pool.ntp.org"
