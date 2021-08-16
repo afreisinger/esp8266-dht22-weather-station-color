@@ -425,17 +425,24 @@ void drawTime() {
   gfx.setColor(MINI_WHITE);
   String date = WDAY_NAMES[timeinfo->tm_wday] + " " + MONTH_NAMES[timeinfo->tm_mon] + " " + String(timeinfo->tm_mday) + " " + String(1900 + timeinfo->tm_year);
   gfx.drawString(120, 6, date);
-
   gfx.setFont(ArialRoundedMTBold_36);
 
-  if (IS_STYLE_12HR) {
-    int hour = (timeinfo->tm_hour + 11) % 12 + 1; // take care of noon and midnight
-    sprintf(time_str, "%2d:%02d\n", hour, timeinfo->tm_min);
-  } else {
-    sprintf(time_str, "%02d:%02d\n", timeinfo->tm_hour, timeinfo->tm_min);
-  }
-  gfx.drawString(120, 20, time_str);
+  if (IS_STYLE_12HR) { //12:00
+     int hour = (timeinfo->tm_hour + 11) % 12 + 1; // take care of noon and midnight
+        if (IS_STYLE_HHMM) {
+            sprintf(time_str, "%2d:%02d\n", hour, timeinfo->tm_min);
+        } else {
+            sprintf(time_str, "%2d:%02d:%02d\n", hour, timeinfo->tm_min, timeinfo->tm_sec);
+        }
+  } else {  //24:00
+          if (IS_STYLE_HHMM) {
+              sprintf(time_str, "%02d:%02d\n", timeinfo->tm_hour, timeinfo->tm_min); //hh:mm
+          } else {
+              sprintf(time_str, "%02d:%02d:%02d\n", timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec); //hh:mm:ss
+          }
+       }
 
+  gfx.drawString(120, 20, time_str);
   gfx.setTextAlignment(TEXT_ALIGN_LEFT);
   gfx.setFont(ArialMT_Plain_10);
   gfx.setColor(MINI_BLUE);
@@ -813,7 +820,8 @@ void loadPropertiesFromSpiffs() {
     Serial.println("\tlocation name: " + DISPLAYED_LOCATION_NAME);
     Serial.println("\tmetric: " + String(IS_METRIC ? "true" : "false"));
     Serial.println("\t12h style: " + String(IS_STYLE_12HR ? "true" : "false"));
-    Serial.println("\tthis board: " + THIS_BOARD);
+    Serial.println("\thh:mm style: " + String(IS_STYLE_HHMM ? "true" : "false"));
+    Serial.print("\tthis board: " + THIS_BOARD);
   } else {
     Serial.println("SPIFFS mount failed.");
   }
